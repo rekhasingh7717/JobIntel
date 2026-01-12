@@ -47,9 +47,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { adminJobs } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
-import { parseJobText, ParsedJobData } from '@/services/aiJobParser';
 import { JobPreviewDialog } from '@/components/admin/JobPreviewDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useJobsStore } from '@/store/jobsStore';
+
+interface ParsedJobData {
+  title: string;
+  company: string;
+  description: string;
+  location: string;
+  isRemote: boolean;
+  salary?: string;
+  stipend?: string;
+  techStack: string[];
+  tags: string[];
+  eligibility?: string;
+  experience?: string;
+  batch?: string[];
+}
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
