@@ -6,6 +6,7 @@ import { scrapeOnce } from '../services/playwrightScraper';
 import { Snapshot } from '../models/Snapshot';
 import { hashContent } from '../services/deltaDetector';
 import { NotificationLog } from '../models/NotificationLog';
+import { Revenue } from '../models/Revenue';
 
 // Get dashboard statistics
 export async function getAdminStats(_req: Request, res: Response) {
@@ -99,8 +100,10 @@ export async function getUserAnalytics(_req: Request, res: Response) {
 // Get revenue analytics
 export async function getRevenueAnalytics(_req: Request, res: Response) {
   try {
-    // Calculate real revenue from system (placeholder until payment system is implemented)
+    // Get revenue data from the last 6 months
     const months = [];
+    let totalRevenue = 0;
+
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
@@ -110,21 +113,42 @@ export async function getRevenueAnalytics(_req: Request, res: Response) {
       const nextMonth = new Date(date);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-      const jobsPosted = await Job.countDocuments({
-        createdAt: { $gte: date, $lt: nextMonth }
-      });
+      // Get revenue from Revenue model
+      const revenueData = await Revenue.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: date, $lt: nextMonth },
+            status: 'completed'
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$amount' },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
 
-      // Placeholder revenue calculation (can be replaced with actual payment data)
-      const revenue = jobsPosted * 500; // ₹500 per job posting
+      const monthRevenue = revenueData[0]?.total || 0;
+      const monthCount = revenueData[0]?.count || 0;
+      totalRevenue += monthRevenue;
 
       months.push({
-        date: date.toLocaleDateString('en-US', { month: 'short' }),
-        revenue,
+        date: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        revenue: monthRevenue,
+        transactionCount: monthCount,
       });
     }
 
-    res.json(months);
+    res.json({
+      monthlyData: months,
+      totalRevenue,
+      averageMonthlyRevenue: totalRevenue / 6,
+      timestamp: new Date().toISOString(),
+    });
   } catch (err) {
+    console.error('Revenue analytics error:', err);
     res.status(500).json({ error: String(err) });
   }
 }

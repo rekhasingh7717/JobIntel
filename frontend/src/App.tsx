@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useAuthStore } from "./store/authStore";
 import { MainLayout } from "./components/layout/MainLayout";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -26,7 +28,14 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const AppContent = () => {
+  useEffect(() => {
+    // Initialize auth from localStorage on app load
+    const { initializeFromStorage } = useAuthStore.getState();
+    initializeFromStorage();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -75,6 +84,18 @@ const App = () => (
           
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

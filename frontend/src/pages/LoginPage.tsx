@@ -42,10 +42,7 @@ const LoginPage = () => {
   };
 
   const demoCredentials = [
-    { email: 'user@demo.com', password: 'demo123', tier: 'Free', isAdmin: false },
-    { email: 'premium@demo.com', password: 'demo123', tier: 'Premium', isAdmin: false },
-    { email: 'ultra@demo.com', password: 'demo123', tier: 'Ultra', isAdmin: false },
-    { email: 'admin@demo.com', password: 'admin123', tier: 'Admin', isAdmin: true },
+    { email: 'admin@jobscout.local', password: 'password123', tier: 'Admin', isAdmin: true },
   ];
 
   const handleDemoLogin = async (demoEmail: string, demoPassword: string, isAdmin: boolean) => {

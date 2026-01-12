@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Job } from "../models/Job";
 import { Company } from "../models/Company";
+import { Revenue } from "../models/Revenue";
 
 // AI Job Parser - Parse raw job text and extract structured data
 export async function parseJobText(req: Request, res: Response) {
@@ -152,6 +153,23 @@ export async function createJob(req: Request, res: Response) {
         stipend,
       },
     });
+
+    // Create revenue record for job posting
+    try {
+      await Revenue.create({
+        jobId: job._id,
+        companyId: companyDocId,
+        amount: 500, // Default ₹500 per job posting
+        currency: 'INR',
+        type: 'job_posting',
+        status: 'completed',
+        description: `Job posting: ${title}`,
+        metadata: { jobTitle: title, postedDate: new Date() }
+      });
+    } catch (revenueErr) {
+      console.error('Failed to create revenue record:', revenueErr);
+    }
+
     return res.status(201).json(job);
   } catch (err) {
     return res.status(500).json({ error: "failed to create job", details: err });
