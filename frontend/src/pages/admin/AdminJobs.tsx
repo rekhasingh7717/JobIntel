@@ -104,7 +104,7 @@ export default function AdminJobs() {
     setIsLoading(true);
     try {
       // Call backend AI parser
-      const response = await fetch('/api/job/parse', {
+      const response = await fetch('/api/jobs/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText: rawJobText }),
@@ -132,7 +132,7 @@ export default function AdminJobs() {
     setIsLoading(true);
     try {
       // Call backend to create published job
-      const response = await fetch('/api/job', {
+      const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -51,7 +51,7 @@ const JobsPage = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch('/api/job?status=active');
+        const response = await fetch('/api/jobs?status=active');
         if (response.ok) {
           const jobs = await response.json();
           setBackendJobs(jobs);
