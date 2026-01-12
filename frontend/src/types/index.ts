@@ -1,11 +1,13 @@
 // User Types
 export type UserTier = 'free' | 'premium' | 'ultra';
+export type UserRole = 'user' | 'admin';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   tier: UserTier;
+  role?: UserRole;
   avatar?: string;
   phone?: string;
   telegramId?: string;

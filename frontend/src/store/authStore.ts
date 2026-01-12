@@ -45,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
             email,
             name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
             tier: demoUser.tier,
+            role: demoUser.isAdmin ? 'admin' : 'user',
           };
           set({ 
             user, 
@@ -71,6 +72,7 @@ export const useAuthStore = create<AuthState>()(
           email,
           name,
           tier: 'free',
+          role: 'user',
           skills: [],
           preferredLocations: [],
           preferredRoles: [],

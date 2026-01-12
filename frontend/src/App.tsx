@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -36,17 +37,31 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Main pages with layout */}
+          {/* Main pages with layout - for regular users */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:id" element={<JobDetailPage />} />
             <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute requiredRole="user">
+                  <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
           </Route>
 
-          {/* Admin pages with admin layout */}
-          <Route path="/admin" element={<AdminLayout />}>
+          {/* Admin pages with admin layout - for admin users only */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
             <Route path="jobs" element={<AdminJobs />} />
             <Route path="users" element={<AdminUsers />} />
