@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Briefcase,
   Users,
@@ -7,9 +8,9 @@ import {
   DollarSign,
   FileText,
   Zap,
+  Loader2,
 } from 'lucide-react';
 import { StatsCard } from '@/components/admin/StatsCard';
-import { adminStats, jobAnalytics, userAnalytics } from '@/data/adminMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AreaChart,
@@ -23,7 +24,61 @@ import {
   Bar,
 } from 'recharts';
 
+interface AdminStatsData {
+  totalJobs: number;
+  activeJobs: number;
+  pendingJobs: number;
+  totalApplications: number;
+  applicationsToday: number;
+  notificationsSent: number;
+}
+
+interface AnalyticsData {
+  date: string;
+  posted?: number;
+  jobs?: number;
+  revenue?: number;
+}
+
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<AdminStatsData | null>(null);
+  const [jobAnalytics, setJobAnalytics] = useState<AnalyticsData[]>([]);
+  const [userAnalytics, setUserAnalytics] = useState<AnalyticsData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, jobRes, userRes] = await Promise.all([
+          fetch('/api/admin/stats'),
+          fetch('/api/admin/analytics/jobs'),
+          fetch('/api/admin/analytics/users'),
+        ]);
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+        if (jobRes.ok) {
+          const jobData = await jobRes.json();
+          setJobAnalytics(jobData);
+        }
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setUserAnalytics(userData);
+        }
+      } catch (err) {
+        setError('Failed to fetch analytics data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -38,6 +93,28 @@ export default function AdminDashboard() {
     }).format(num);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back, Admin. Here's what's happening today.</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -50,97 +127,73 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Jobs"
-          value={formatNumber(adminStats.totalJobs)}
-          change="+12% from last week"
+          value={formatNumber(stats?.totalJobs || 0)}
+          change={`${stats?.activeJobs || 0} active`}
           changeType="positive"
           icon={Briefcase}
           iconColor="bg-blue-100 text-blue-600"
         />
         <StatsCard
           title="Active Jobs"
-          value={formatNumber(adminStats.activeJobs)}
-          change="+8% from last week"
-          changeType="positive"
+          value={formatNumber(stats?.activeJobs || 0)}
+          change={`${stats?.pendingJobs || 0} pending`}
+          changeType="neutral"
           icon={Activity}
           iconColor="bg-green-100 text-green-600"
         />
         <StatsCard
-          title="Total Users"
-          value={formatNumber(adminStats.totalUsers)}
-          change="+18% from last month"
+          title="Applications"
+          value={formatNumber(stats?.totalApplications || 0)}
+          change={`${stats?.applicationsToday || 0} today`}
           changeType="positive"
-          icon={Users}
+          icon={FileText}
           iconColor="bg-purple-100 text-purple-600"
         />
         <StatsCard
-          title="Revenue"
-          value={formatCurrency(adminStats.revenue)}
-          change="+24% from last month"
-          changeType="positive"
-          icon={DollarSign}
-          iconColor="bg-amber-100 text-amber-600"
-        />
-      </div>
-
-      {/* Secondary Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Premium Users"
-          value={formatNumber(adminStats.premiumUsers)}
-          change="11.2% of total"
-          changeType="neutral"
-          icon={TrendingUp}
-          iconColor="bg-indigo-100 text-indigo-600"
-        />
-        <StatsCard
-          title="Ultra Users"
-          value={formatNumber(adminStats.ultraUsers)}
-          change="3% of total"
-          changeType="neutral"
-          icon={Zap}
-          iconColor="bg-orange-100 text-orange-600"
-        />
-        <StatsCard
-          title="Applications Today"
-          value={formatNumber(adminStats.applicationsToday)}
-          change="+5% from yesterday"
-          changeType="positive"
-          icon={FileText}
-          iconColor="bg-teal-100 text-teal-600"
-        />
-        <StatsCard
           title="Notifications Sent"
-          value={formatNumber(adminStats.notificationsSent)}
-          change="This month"
+          value={formatNumber(stats?.notificationsSent || 0)}
+          change="This period"
           changeType="neutral"
           icon={Bell}
-          iconColor="bg-pink-100 text-pink-600"
+          iconColor="bg-amber-100 text-amber-600"
         />
       </div>
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Job Analytics Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Analytics - Last 7 Days</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={jobAnalytics}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="posted" fill="#3b82f6" name="Jobs Posted" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* User Growth Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>User Growth</CardTitle>
+            <CardTitle>Job Postings - Last 6 Months</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={userAnalytics}>
                   <defs>
-                    <linearGradient id="colorFree" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorPremium" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorUltra" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    <linearGradient id="colorJobs" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -155,23 +208,9 @@ export default function AdminDashboard() {
                   />
                   <Area
                     type="monotone"
-                    dataKey="free"
-                    stroke="hsl(var(--primary))"
-                    fill="url(#colorFree)"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="premium"
-                    stroke="#8b5cf6"
-                    fill="url(#colorPremium)"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="ultra"
-                    stroke="#f59e0b"
-                    fill="url(#colorUltra)"
+                    dataKey="jobs"
+                    stroke="#3b82f6"
+                    fill="url(#colorJobs)"
                     strokeWidth={2}
                   />
                 </AreaChart>
@@ -180,11 +219,13 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Job Activity Chart */}
+        {/* Job Trends Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Weekly Job Activity</CardTitle>
+            <CardTitle>Job Posting Trends</CardTitle>
           </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -199,8 +240,7 @@ export default function AdminDashboard() {
                       borderRadius: '8px',
                     }}
                   />
-                  <Bar dataKey="posted" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="applications" fill="hsl(var(--primary-glow))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="posted" fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

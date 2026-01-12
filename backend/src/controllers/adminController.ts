@@ -5,6 +5,143 @@ import { AuditLog } from '../models/AuditLog';
 import { scrapeOnce } from '../services/playwrightScraper';
 import { Snapshot } from '../models/Snapshot';
 import { hashContent } from '../services/deltaDetector';
+import { NotificationLog } from '../models/NotificationLog';
+
+// Get dashboard statistics
+export async function getAdminStats(_req: Request, res: Response) {
+  try {
+    const totalJobs = await Job.countDocuments();
+    const activeJobs = await Job.countDocuments({ status: 'published' });
+    const pendingJobs = await Job.countDocuments({ status: 'pending' });
+    
+    const totalApplications = await Job.aggregate([
+      { $group: { _id: null, total: { $sum: '$applicantsCount' } } }
+    ]);
+    
+    const applicationsToday = await Job.countDocuments({
+      createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+    });
+
+    const notificationsSent = await NotificationLog.countDocuments();
+
+    res.json({
+      totalJobs,
+      activeJobs,
+      pendingJobs,
+      totalApplications: totalApplications[0]?.total || 0,
+      applicationsToday,
+      notificationsSent,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+}
+
+// Get job analytics data
+export async function getJobAnalytics(_req: Request, res: Response) {
+  try {
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      const posted = await Job.countDocuments({
+        createdAt: { $gte: date, $lt: nextDate }
+      });
+
+      last7Days.push({
+        date: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        posted,
+      });
+    }
+
+    res.json(last7Days);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+}
+
+// Get user analytics
+export async function getUserAnalytics(_req: Request, res: Response) {
+  try {
+    // Get last 6 months of data
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      date.setDate(1);
+      date.setHours(0, 0, 0, 0);
+
+      const nextMonth = new Date(date);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      const jobsCount = await Job.countDocuments({
+        createdAt: { $gte: date, $lt: nextMonth }
+      });
+
+      months.push({
+        date: date.toLocaleDateString('en-US', { month: 'short' }),
+        jobs: jobsCount,
+      });
+    }
+
+    res.json(months);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+}
+
+// Get revenue analytics
+export async function getRevenueAnalytics(_req: Request, res: Response) {
+  try {
+    // Calculate real revenue from system (placeholder until payment system is implemented)
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      date.setDate(1);
+      date.setHours(0, 0, 0, 0);
+
+      const nextMonth = new Date(date);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      const jobsPosted = await Job.countDocuments({
+        createdAt: { $gte: date, $lt: nextMonth }
+      });
+
+      // Placeholder revenue calculation (can be replaced with actual payment data)
+      const revenue = jobsPosted * 500; // ₹500 per job posting
+
+      months.push({
+        date: date.toLocaleDateString('en-US', { month: 'short' }),
+        revenue,
+      });
+    }
+
+    res.json(months);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+}
+
+// Get notifications
+export async function getNotifications(_req: Request, res: Response) {
+  try {
+    const notifications = await NotificationLog.find()
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+}
 
 export async function listPendingJobs(_req: Request, res: Response) {
   const jobs = await Job.find({ status: 'pending' }).lean();
