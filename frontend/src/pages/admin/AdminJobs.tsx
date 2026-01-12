@@ -47,6 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { adminJobs } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
+import { parseJobText } from '@/services/aiJobParser';
 import { JobPreviewDialog } from '@/components/admin/JobPreviewDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useJobsStore } from '@/store/jobsStore';
@@ -103,19 +104,8 @@ export default function AdminJobs() {
     setError(null);
     setIsLoading(true);
     try {
-      // Call backend AI parser
-      const response = await fetch('/api/jobs/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: rawJobText }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to parse job text');
-      }
-
-      const parsed = await response.json();
+      // Use local AI parser (frontend)
+      const parsed = parseJobText(rawJobText);
       setParsedJob(parsed);
       setIsAiDialogOpen(false);
       setIsPreviewOpen(true);
@@ -131,33 +121,37 @@ export default function AdminJobs() {
     
     setIsLoading(true);
     try {
-      // Call backend to create published job
-      const response = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: parsedJob.title,
-          company: parsedJob.company,
-          description: parsedJob.description,
-          location: parsedJob.location,
-          isRemote: parsedJob.isRemote,
-          salary: parsedJob.salary,
-          stipend: parsedJob.stipend,
-          techStack: parsedJob.techStack,
-          tags: parsedJob.tags,
-          eligibility: parsedJob.eligibility,
-          experience: parsedJob.experience,
-          batch: parsedJob.batch,
-          status: 'active',
-          rawText: rawJobText,
-        }),
-      });
+      // Try to publish to backend if available, otherwise save locally
+      try {
+        const response = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: parsedJob.title,
+            company: parsedJob.company,
+            description: parsedJob.description,
+            location: parsedJob.location,
+            isRemote: parsedJob.isRemote,
+            salary: parsedJob.salary,
+            stipend: parsedJob.stipend,
+            techStack: parsedJob.techStack,
+            tags: parsedJob.tags,
+            eligibility: parsedJob.eligibility,
+            experience: parsedJob.experience,
+            batch: parsedJob.batch,
+            status: 'active',
+            rawText: rawJobText,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to publish job');
+        if (response.ok) {
+          console.log('Job published to backend');
+        }
+      } catch (backendErr) {
+        console.log('Backend not available, saving locally:', backendErr);
       }
 
-      // Also publish to local store for immediate UI update
+      // Always save to local store for immediate UI update
       publishJob({
         title: parsedJob.title,
         company: parsedJob.company,

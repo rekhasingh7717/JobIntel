@@ -3,6 +3,12 @@ import { createJob, getJob, listJobs, ingestJob, updateJob, deleteJob, parseJobT
 
 const router = Router();
 
+// Log all requests to this router
+router.use((req, res, next) => {
+  console.log(`Job Route: ${req.method} ${req.path}`);
+  next();
+});
+
 router.post("/parse", parseJobText);
 router.post("/", createJob);
 router.get("/", listJobs);

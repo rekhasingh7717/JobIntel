@@ -57,7 +57,7 @@ const JobsPage = () => {
           setBackendJobs(jobs);
         }
       } catch (err) {
-        console.error('Failed to fetch jobs:', err);
+        console.log('Backend not available, using local store only:', err);
       } finally {
         setLoadingJobs(false);
       }

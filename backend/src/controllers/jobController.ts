@@ -5,6 +5,7 @@ import { Company } from "../models/Company";
 // AI Job Parser - Parse raw job text and extract structured data
 export async function parseJobText(req: Request, res: Response) {
   try {
+    console.log("parseJobText endpoint called");
     const { rawText } = req.body;
 
     if (!rawText || rawText.trim().length === 0) {

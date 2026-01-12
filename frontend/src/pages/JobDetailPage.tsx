@@ -25,14 +25,19 @@ import {
 } from 'lucide-react';
 import { mockJobs } from '@/data/mockData';
 import { useAuthStore } from '@/store/authStore';
+import { useJobsStore } from '@/store/jobsStore';
 import { useToast } from '@/hooks/use-toast';
 
 const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
   const { toast } = useToast();
+  const { publishedJobs } = useJobsStore();
 
-  const job = mockJobs.find((j) => j.id === id);
+  // Try to find job from published jobs first, then from mock data
+  const publishedJob = publishedJobs.find((j) => j.id === id);
+  const mockJob = mockJobs.find((j) => j.id === id);
+  const job = publishedJob || mockJob;
 
   if (!job) {
     return (
