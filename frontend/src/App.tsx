@@ -21,7 +21,6 @@ import AdminCrawlers from "./pages/admin/AdminCrawlers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminSettings from "./pages/admin/AdminSettings";
-import AdminCrawlers from "./pages/admin/AdminCrawlers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
