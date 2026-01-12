@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
-import { mockJobs, mockApplications } from '@/data/mockData';
 import {
   Briefcase,
   TrendingUp,
@@ -49,8 +48,9 @@ const DashboardPage = () => {
     referralUpdate: false,
   };
 
-  const matchedJobs = mockJobs.filter((job) => job.matchScore && job.matchScore > 70);
-  const recentApplications = mockApplications.slice(0, 3);
+  // Remove demo/mock data: use backend or empty arrays
+  const matchedJobs: any[] = [];
+  const recentApplications: any[] = [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -71,9 +71,9 @@ const DashboardPage = () => {
 
   const stats = [
     { label: 'Job Matches', value: matchedJobs.length, icon: Target, color: 'text-primary' },
-    { label: 'Applications', value: mockApplications.length, icon: Briefcase, color: 'text-accent' },
-    { label: 'Interviews', value: 1, icon: Calendar, color: 'text-success' },
-    { label: 'Saved Jobs', value: 5, icon: Bookmark, color: 'text-warning' },
+    { label: 'Applications', value: recentApplications.length, icon: Briefcase, color: 'text-accent' },
+    { label: 'Interviews', value: 0, icon: Calendar, color: 'text-success' },
+    { label: 'Saved Jobs', value: 0, icon: Bookmark, color: 'text-warning' },
   ];
 
   return (
@@ -135,9 +135,9 @@ const DashboardPage = () => {
                   </Button>
                 </Link>
               </div>
-              <Progress value={75} className="h-2 mb-3" />
+              <Progress value={user.profileCompletion || 0} className="h-2 mb-3" />
               <p className="text-sm text-muted-foreground">
-                Your profile is 75% complete. Add more skills to improve job matching.
+                Your profile is {user.profileCompletion || 0}% complete. Add more skills to improve job matching.
               </p>
             </div>
 
