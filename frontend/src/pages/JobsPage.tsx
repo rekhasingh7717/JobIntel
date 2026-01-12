@@ -30,9 +30,12 @@ import {
 import { mockJobs } from '@/data/mockData';
 import { Job, JobType, ExperienceLevel } from '@/types';
 import { useAuthStore } from '@/store/authStore';
+import { useJobsStore } from '@/store/jobsStore';
 
 const JobsPage = () => {
   const { user, isAuthenticated } = useAuthStore();
+  const { publishedJobs } = useJobsStore();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [typeFilters, setTypeFilters] = useState<JobType[]>([]);
@@ -40,6 +43,37 @@ const JobsPage = () => {
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'relevance' | 'date' | 'salary'>('relevance');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Combine mock jobs with published jobs
+  const allJobs = useMemo(() => {
+    const convertedPublished = publishedJobs
+      .filter(pj => pj.status === 'active')
+      .map((pj) => ({
+        id: pj.id,
+        title: pj.title,
+        company: {
+          name: pj.company,
+          logo: undefined,
+          description: '',
+          website: '',
+          industry: 'Technology',
+        },
+        location: pj.location,
+        isRemote: pj.isRemote,
+        type: 'full-time' as JobType,
+        experienceLevel: 'fresher' as ExperienceLevel,
+        experienceRange: { min: 0, max: 3 },
+        salary: pj.salary ? { min: 0, max: 100000, currency: 'INR' } : undefined,
+        description: pj.description,
+        requirements: [],
+        skills: pj.techStack,
+        batch: pj.batch,
+        applyLink: '#',
+        postedAt: pj.createdAt,
+      })) as Job[];
+
+    return [...mockJobs, ...convertedPublished];
+  }, [publishedJobs]);
 
   const jobTypes: { value: JobType; label: string }[] = [
     { value: 'full-time', label: 'Full-time' },
@@ -58,7 +92,7 @@ const JobsPage = () => {
   ];
 
   const filteredJobs = useMemo(() => {
-    let jobs = [...mockJobs];
+    let jobs = [...allJobs];
 
     // Search filter
     if (searchQuery) {

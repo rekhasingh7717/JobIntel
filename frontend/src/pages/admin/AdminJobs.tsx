@@ -11,6 +11,7 @@ import {
   Trash2,
   Upload,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,10 +41,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { adminJobs } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
+import { parseJobText, ParsedJobData } from '@/services/aiJobParser';
+import { JobPreviewDialog } from '@/components/admin/JobPreviewDialog';
+import { useJobsStore } from '@/store/jobsStore';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -63,6 +68,12 @@ export default function AdminJobs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [rawJobText, setRawJobText] = useState('');
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [parsedJob, setParsedJob] = useState<ParsedJobData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { publishedJobs, publishJob } = useJobsStore();
 
   const filteredJobs = adminJobs.filter(
     (job) =>
@@ -70,11 +81,47 @@ export default function AdminJobs() {
       job.company.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAiParse = () => {
-    // Simulate AI parsing
-    console.log('Parsing job text:', rawJobText);
-    setIsAiDialogOpen(false);
+  const handleAiParse = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      // Simulate AI parsing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const parsed = parseJobText(rawJobText);
+      setParsedJob(parsed);
+      setIsAiDialogOpen(false);
+      setIsPreviewOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to parse job text');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePublishJob = () => {
+    if (!parsedJob) return;
+    
+    publishJob({
+      title: parsedJob.title,
+      company: parsedJob.company,
+      description: parsedJob.description,
+      location: parsedJob.location,
+      isRemote: parsedJob.isRemote,
+      salary: parsedJob.salary,
+      stipend: parsedJob.stipend,
+      techStack: parsedJob.techStack,
+      tags: parsedJob.tags,
+      eligibility: parsedJob.eligibility,
+      experience: parsedJob.experience,
+      batch: parsedJob.batch,
+      status: 'active',
+      rawText: rawJobText,
+    });
+    
+    setIsPreviewOpen(false);
     setRawJobText('');
+    setParsedJob(null);
   };
 
   return (
@@ -104,6 +151,12 @@ export default function AdminJobs() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="rawJob">Raw Job Text or URL</Label>
                   <Textarea
@@ -119,9 +172,9 @@ export default function AdminJobs() {
                 <Button variant="outline" onClick={() => setIsAiDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAiParse} className="gap-2">
+                <Button onClick={handleAiParse} className="gap-2" disabled={isLoading || !rawJobText.trim()}>
                   <Sparkles className="h-4 w-4" />
-                  Parse with AI
+                  {isLoading ? 'Parsing...' : 'Parse with AI'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -259,6 +312,15 @@ export default function AdminJobs() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Job Preview Dialog */}
+      <JobPreviewDialog
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        parsedJob={parsedJob}
+        isLoading={isLoading}
+        onPublish={handlePublishJob}
+      />
     </div>
   );
 }
