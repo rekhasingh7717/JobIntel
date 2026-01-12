@@ -26,6 +26,12 @@ interface JobsState {
   publishJob: (job: Omit<ParsedJob, 'id' | 'createdAt'>) => void;
   removeJob: (id: string) => void;
   updateJobStatus: (id: string, status: JobStatus) => void;
+  clearAllJobs: () => void;
+}
+
+// Clear any existing jobs from localStorage on app start
+if (typeof window !== 'undefined') {
+  localStorage.removeItem('jobs-storage');
 }
 
 export const useJobsStore = create<JobsState>()(
@@ -56,6 +62,10 @@ export const useJobsStore = create<JobsState>()(
             job.id === id ? { ...job, status } : job
           ),
         }));
+      },
+
+      clearAllJobs: () => {
+        set({ publishedJobs: [] });
       },
     }),
     {
