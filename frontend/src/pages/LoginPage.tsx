@@ -145,26 +145,38 @@ const LoginPage = () => {
 
           {/* Demo credentials */}
           <div className="mt-8 p-4 bg-muted rounded-lg">
-            <p className="text-sm font-medium mb-3">Demo Accounts:</p>
-            <div className="space-y-2">
-              {demoCredentials.map((cred) => (
+            <p className="text-sm font-medium mb-3">👤 Demo Accounts:</p>
+            <div className="space-y-3">
+              {/* Admin Account */}
+              <div className="border border-primary/30 rounded-lg p-3 bg-primary/5">
+                <p className="text-xs font-semibold text-primary mb-2">🔐 ADMIN ACCOUNT</p>
+                <p className="text-xs text-muted-foreground mb-2">Full access to dashboard, analytics, and job management</p>
                 <button
-                  key={cred.email}
-                  onClick={() => handleDemoLogin(cred.email, cred.password, cred.isAdmin)}
-                  className={cn(
-                    "w-full flex items-center justify-between p-2 rounded-md transition-colors text-sm",
-                    cred.isAdmin 
-                      ? "bg-primary/10 hover:bg-primary/20 border border-primary/20" 
-                      : "bg-background hover:bg-accent/10"
-                  )}
+                  onClick={() => handleDemoLogin(demoCredentials[0].email, demoCredentials[0].password, true)}
+                  className="w-full flex items-center justify-between p-2 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors text-sm border border-primary/20"
                 >
-                  <span className="text-muted-foreground">{cred.email}</span>
-                  <span className={cn(
-                    "font-medium",
-                    cred.isAdmin && "text-primary"
-                  )}>{cred.tier}</span>
+                  <div className="text-left">
+                    <p className="font-medium text-primary">Email:</p>
+                    <p className="text-xs text-muted-foreground">{demoCredentials[0].email}</p>
+                    <p className="font-medium text-primary mt-1">Password:</p>
+                    <p className="text-xs text-muted-foreground">{demoCredentials[0].password}</p>
+                  </div>
+                  <Shield className="h-4 w-4 text-primary flex-shrink-0" />
                 </button>
-              ))}
+              </div>
+
+              {/* Regular User Account - Coming Soon */}
+              <div className="border border-border rounded-lg p-3 bg-muted/50 opacity-60">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">👨‍💼 USER ACCOUNT</p>
+                <p className="text-xs text-muted-foreground mb-2">Access job listings, applications, and profile</p>
+                <button
+                  disabled
+                  className="w-full flex items-center justify-between p-2 rounded-md bg-background/50 text-muted-foreground cursor-not-allowed text-sm"
+                >
+                  <span className="text-xs">Coming Soon...</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
 

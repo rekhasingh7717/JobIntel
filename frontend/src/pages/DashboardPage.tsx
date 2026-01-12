@@ -38,6 +38,17 @@ const DashboardPage = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // Add extra safety check for notificationPreferences
+  const notifPrefs = user.notificationPreferences || {
+    email: true,
+    whatsapp: false,
+    telegram: false,
+    newJobMatch: true,
+    deadlineReminder: true,
+    applicationUpdate: true,
+    referralUpdate: false,
+  };
+
   const matchedJobs = mockJobs.filter((job) => job.matchScore && job.matchScore > 70);
   const recentApplications = mockApplications.slice(0, 3);
 
@@ -254,7 +265,7 @@ const DashboardPage = () => {
                   </div>
                   <Switch
                     id="whatsapp"
-                    checked={user.notificationPreferences.whatsapp}
+                    checked={notifPrefs.whatsapp}
                     disabled={user.tier === 'free'}
                   />
                 </div>
@@ -267,7 +278,7 @@ const DashboardPage = () => {
                   </div>
                   <Switch
                     id="email"
-                    checked={user.notificationPreferences.email}
+                    checked={notifPrefs.email}
                     disabled={user.tier === 'free'}
                   />
                 </div>
@@ -280,7 +291,7 @@ const DashboardPage = () => {
                   </div>
                   <Switch
                     id="telegram"
-                    checked={user.notificationPreferences.telegram}
+                    checked={notifPrefs.telegram}
                     disabled={user.tier === 'free'}
                   />
                 </div>
